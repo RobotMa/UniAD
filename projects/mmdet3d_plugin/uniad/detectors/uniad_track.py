@@ -4,50 +4,57 @@
 # Copyright (c) OpenDriveLab. All rights reserved.                                #
 #---------------------------------------------------------------------------------#
 
+import copy
+import math
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
 import torch
 import torch.nn as nn
+from einops import rearrange
 from mmcv.runner import auto_fp16
-from mmdet.models import DETECTORS
+from mmdet.models import DETECTORS, build_loss
+from mmdet.models.utils.transformer import inverse_sigmoid
 from mmdet3d.core import bbox3d2result
 from mmdet3d.core.bbox.coders import build_bbox_coder
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
-from projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
-import copy
-import math
 from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
-from mmdet.models import build_loss
-from einops import rearrange
-from mmdet.models.utils.transformer import inverse_sigmoid
-from ..dense_heads.track_head_plugin import MemoryBank, QueryInteractionModule, Instances, RuntimeTrackerBase
+from projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
+
+from ..dense_heads.track_head_plugin import (
+    Instances,
+    MemoryBank,
+    QueryInteractionModule,
+    RuntimeTrackerBase,
+)
 
 @DETECTORS.register_module()
 class UniADTrack(MVXTwoStageDetector):
     """UniAD tracking part
     """
     def __init__(
-        self, 
-        use_grid_mask=False,
-        img_backbone=None,
-        img_neck=None,
-        pts_bbox_head=None,
-        train_cfg=None,
-        test_cfg=None,
-        pretrained=None,
-        video_test_mode=False,
-        loss_cfg=None,
-        qim_args=dict(
+        self,
+        use_grid_mask: bool = False,
+        img_backbone: Optional[nn.Module] = None,
+        img_neck: Optional[nn.Module] = None,
+        pts_bbox_head: Optional[nn.Module] = None,
+        train_cfg: Optional[Dict[str, Any]] = None,
+        test_cfg: Optional[Dict[str, Any]] = None,
+        pretrained: Optional[str] = None,
+        video_test_mode: bool = False,
+        loss_cfg: Optional[Dict[str, Any]] = None,
+        qim_args: Dict[str, Any] = dict(
             qim_type="QIMBase",
             merger_dropout=0,
             update_query_pos=False,
             fp_ratio=0.3,
             random_drop=0.1,
         ),
-        mem_args=dict(
+        mem_args: Dict[str, Any] = dict(
             memory_bank_type="MemoryBank",
             memory_bank_score_thresh=0.0,
             memory_bank_len=4,
         ),
-        bbox_coder=dict(
+        bbox_coder: Dict[str, Any] = dict(
             type="DETRTrack3DCoder",
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
@@ -57,21 +64,21 @@ class UniADTrack(MVXTwoStageDetector):
             with_nms=False,
             iou_thres=0.3,
         ),
-        pc_range=None,
-        embed_dims=256,
-        num_query=900,
-        num_classes=10,
-        vehicle_id_list=None,
-        score_thresh=0.2,
-        filter_score_thresh=0.1,
-        miss_tolerance=5,
-        gt_iou_threshold=0.0,
-        freeze_img_backbone=False,
-        freeze_img_neck=False,
-        freeze_bn=False,
-        freeze_bev_encoder=False,
-        queue_length=3,
-    ):
+        pc_range: Optional[Sequence[float]] = None,
+        embed_dims: int = 256,
+        num_query: int = 900,
+        num_classes: int = 10,
+        vehicle_id_list: Optional[Sequence[int]] = None,
+        score_thresh: float = 0.2,
+        filter_score_thresh: float = 0.1,
+        miss_tolerance: int = 5,
+        gt_iou_threshold: float = 0.0,
+        freeze_img_backbone: bool = False,
+        freeze_img_neck: bool = False,
+        freeze_bn: bool = False,
+        freeze_bev_encoder: bool = False,
+        queue_length: int = 3,
+    ) -> None:
         super(UniADTrack, self).__init__(
             img_backbone=img_backbone,
             img_neck=img_neck,
@@ -150,7 +157,9 @@ class UniADTrack(MVXTwoStageDetector):
         self.bev_h, self.bev_w = self.pts_bbox_head.bev_h, self.pts_bbox_head.bev_w
         self.freeze_bev_encoder = freeze_bev_encoder
 
-    def extract_img_feat(self, img, len_queue=None):
+    def extract_img_feat(
+        self, img: Optional[torch.Tensor], len_queue: Optional[int] = None
+    ) -> Optional[List[torch.Tensor]]:
         """Extract features of images."""
         if img is None:
             return None
@@ -175,7 +184,7 @@ class UniADTrack(MVXTwoStageDetector):
             img_feats_reshaped.append(img_feat_reshaped)
         return img_feats_reshaped
 
-    def _generate_empty_tracks(self):
+    def _generate_empty_tracks(self) -> Instances:
         track_instances = Instances((1, 1))
         num_queries, dim = self.query_embedding.weight.shape  # (300, 256 * 2)
         device = self.query_embedding.weight.device
@@ -234,8 +243,15 @@ class UniADTrack(MVXTwoStageDetector):
         return track_instances.to(self.query_embedding.weight.device)
 
     def velo_update(
-        self, ref_pts, velocity, l2g_r1, l2g_t1, l2g_r2, l2g_t2, time_delta
-    ):
+        self,
+        ref_pts: torch.Tensor,
+        velocity: torch.Tensor,
+        l2g_r1: torch.Tensor,
+        l2g_t1: torch.Tensor,
+        l2g_r2: torch.Tensor,
+        l2g_t2: torch.Tensor,
+        time_delta: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Args:
             ref_pts (Tensor): (num_query, 3).  in inevrse sigmoid space
@@ -285,7 +301,7 @@ class UniADTrack(MVXTwoStageDetector):
 
         return ref_pts
 
-    def _copy_tracks_for_loss(self, tgt_instances):
+    def _copy_tracks_for_loss(self, tgt_instances: Instances) -> Instances:
         device = self.query_embedding.weight.device
         track_instances = Instances((1, 1))
 
@@ -313,7 +329,9 @@ class UniADTrack(MVXTwoStageDetector):
         track_instances.save_period = copy.deepcopy(tgt_instances.save_period)
         return track_instances.to(device)
 
-    def get_history_bev(self, imgs_queue, img_metas_list):
+    def get_history_bev(
+        self, imgs_queue: torch.Tensor, img_metas_list: Sequence[Sequence[Dict[str, Any]]]
+    ) -> Optional[torch.Tensor]:
         """
         Get history BEV features iteratively. To save GPU memory, gradients are not calculated.
         """
@@ -334,7 +352,14 @@ class UniADTrack(MVXTwoStageDetector):
         return prev_bev
 
     # Generate bev using bev_encoder in BEVFormer
-    def get_bevs(self, imgs, img_metas, prev_img=None, prev_img_metas=None, prev_bev=None):
+    def get_bevs(
+        self,
+        imgs: torch.Tensor,
+        img_metas: Sequence[Dict[str, Any]],
+        prev_img: Optional[torch.Tensor] = None,
+        prev_img_metas: Optional[Sequence[Sequence[Dict[str, Any]]]] = None,
+        prev_bev: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         if prev_img is not None and prev_img_metas is not None:
             assert prev_bev is None
             prev_bev = self.get_history_bev(prev_img, prev_img_metas)
@@ -357,21 +382,21 @@ class UniADTrack(MVXTwoStageDetector):
     @auto_fp16(apply_to=("img", "prev_bev"))
     def _forward_single_frame_train(
         self,
-        img,
-        img_metas,
-        track_instances,
-        prev_img,
-        prev_img_metas,
-        l2g_r1=None,
-        l2g_t1=None,
-        l2g_r2=None,
-        l2g_t2=None,
-        time_delta=None,
-        all_query_embeddings=None,
-        all_matched_indices=None,
-        all_instances_pred_logits=None,
-        all_instances_pred_boxes=None,
-    ):
+        img: torch.Tensor,
+        img_metas: Sequence[Dict[str, Any]],
+        track_instances: Instances,
+        prev_img: torch.Tensor,
+        prev_img_metas: Sequence[Sequence[Dict[str, Any]]],
+        l2g_r1: Optional[torch.Tensor] = None,
+        l2g_t1: Optional[torch.Tensor] = None,
+        l2g_r2: Optional[torch.Tensor] = None,
+        l2g_t2: Optional[torch.Tensor] = None,
+        time_delta: Optional[torch.Tensor] = None,
+        all_query_embeddings: Optional[List[torch.Tensor]] = None,
+        all_matched_indices: Optional[List[torch.Tensor]] = None,
+        all_instances_pred_logits: Optional[List[torch.Tensor]] = None,
+        all_instances_pred_boxes: Optional[List[torch.Tensor]] = None,
+    ) -> Dict[str, Any]:
         """
         Perform forward only on one frame. Called in  forward_train
         Warnning: Only Support BS=1
@@ -473,13 +498,21 @@ class UniADTrack(MVXTwoStageDetector):
         out["track_instances"] = out_track_instances
         return out
 
-    def select_active_track_query(self, track_instances, active_index, img_metas, with_mask=True):
+    def select_active_track_query(
+        self,
+        track_instances: Instances,
+        active_index: torch.Tensor,
+        img_metas: Sequence[Dict[str, Any]],
+        with_mask: bool = True,
+    ) -> Dict[str, Any]:
         result_dict = self._track_instances2results(track_instances[active_index], img_metas, with_mask=with_mask)
         result_dict["track_query_embeddings"] = track_instances.output_embedding[active_index][result_dict['bbox_index']][result_dict['mask']]
         result_dict["track_query_matched_idxes"] = track_instances.matched_gt_idxes[active_index][result_dict['bbox_index']][result_dict['mask']]
         return result_dict
     
-    def select_sdc_track_query(self, sdc_instance, img_metas):
+    def select_sdc_track_query(
+        self, sdc_instance: Instances, img_metas: Sequence[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         out = dict()
         result_dict = self._track_instances2results(sdc_instance, img_metas, with_mask=False)
         out["sdc_boxes_3d"] = result_dict['boxes_3d']
@@ -490,19 +523,21 @@ class UniADTrack(MVXTwoStageDetector):
         return out
 
     @auto_fp16(apply_to=("img", "points"))
-    def forward_track_train(self,
-                            img,
-                            gt_bboxes_3d,
-                            gt_labels_3d,
-                            gt_past_traj,
-                            gt_past_traj_mask,
-                            gt_inds,
-                            gt_sdc_bbox,
-                            gt_sdc_label,
-                            l2g_t,
-                            l2g_r_mat,
-                            img_metas,
-                            timestamp):
+    def forward_track_train(
+        self,
+        img: torch.Tensor,
+        gt_bboxes_3d: Sequence[Sequence[Any]],
+        gt_labels_3d: Sequence[Sequence[torch.Tensor]],
+        gt_past_traj: Sequence[Sequence[torch.Tensor]],
+        gt_past_traj_mask: Sequence[Sequence[torch.Tensor]],
+        gt_inds: Sequence[Sequence[torch.Tensor]],
+        gt_sdc_bbox: Sequence[Sequence[Any]],
+        gt_sdc_label: Sequence[Sequence[torch.Tensor]],
+        l2g_t: Sequence[Sequence[torch.Tensor]],
+        l2g_r_mat: Sequence[Sequence[torch.Tensor]],
+        img_metas: Sequence[Sequence[Dict[str, Any]]],
+        timestamp: Sequence[Sequence[torch.Tensor]],
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
         """Forward funciton
         Args:
         Returns:
@@ -579,7 +614,7 @@ class UniADTrack(MVXTwoStageDetector):
         losses = self.criterion.losses_dict
         return losses, out
 
-    def upsample_bev_if_tiny(self, outs_track):
+    def upsample_bev_if_tiny(self, outs_track: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         if outs_track["bev_embed"].size(0) == 100 * 100:
             # For tiny model
             # bev_emb
@@ -618,16 +653,16 @@ class UniADTrack(MVXTwoStageDetector):
 
     def _forward_single_frame_inference(
         self,
-        img,
-        img_metas,
-        track_instances,
-        prev_bev=None,
-        l2g_r1=None,
-        l2g_t1=None,
-        l2g_r2=None,
-        l2g_t2=None,
-        time_delta=None,
-    ):
+        img: torch.Tensor,
+        img_metas: Sequence[Dict[str, Any]],
+        track_instances: Instances,
+        prev_bev: Optional[torch.Tensor] = None,
+        l2g_r1: Optional[torch.Tensor] = None,
+        l2g_t1: Optional[torch.Tensor] = None,
+        l2g_r2: Optional[torch.Tensor] = None,
+        l2g_t2: Optional[torch.Tensor] = None,
+        time_delta: Optional[torch.Tensor] = None,
+    ) -> Dict[str, Any]:
         """
         img: B, num_cam, C, H, W = img.shape
         """
@@ -706,12 +741,12 @@ class UniADTrack(MVXTwoStageDetector):
 
     def simple_test_track(
         self,
-        img=None,
-        l2g_t=None,
-        l2g_r_mat=None,
-        img_metas=None,
-        timestamp=None,
-    ):
+        img: torch.Tensor,
+        l2g_t: torch.Tensor,
+        l2g_r_mat: torch.Tensor,
+        img_metas: Sequence[Dict[str, Any]],
+        timestamp: torch.Tensor,
+    ) -> List[Optional[Dict[str, Any]]]:
         """only support bs=1 and sequential input"""
 
         bs = img.size(0)
@@ -771,7 +806,12 @@ class UniADTrack(MVXTwoStageDetector):
         results = self._det_instances2results(track_instances_fordet, results, img_metas)
         return results
     
-    def _track_instances2results(self, track_instances, img_metas, with_mask=True):
+    def _track_instances2results(
+        self,
+        track_instances: Instances,
+        img_metas: Sequence[Dict[str, Any]],
+        with_mask: bool = True,
+    ) -> Dict[str, Any]:
         bbox_dict = dict(
             cls_scores=track_instances.pred_logits,
             bbox_preds=track_instances.pred_boxes,
@@ -801,7 +841,12 @@ class UniADTrack(MVXTwoStageDetector):
         )
         return result_dict
 
-    def _det_instances2results(self, instances, results, img_metas):
+    def _det_instances2results(
+        self,
+        instances: Instances,
+        results: List[Optional[Dict[str, Any]]],
+        img_metas: Sequence[Dict[str, Any]],
+    ) -> List[Optional[Dict[str, Any]]]:
         """
         Outs:
         active_instances. keys:
@@ -846,4 +891,3 @@ class UniADTrack(MVXTwoStageDetector):
             result_dict = None
 
         return [result_dict]
-
