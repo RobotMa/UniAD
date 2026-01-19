@@ -6,7 +6,7 @@
 
 import copy
 import math
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 import torch
 import torch.nn as nn
@@ -27,6 +27,9 @@ from ..dense_heads.track_head_plugin import (
     RuntimeTrackerBase,
 )
 
+if TYPE_CHECKING:
+    from ..dense_heads.track_head import BEVFormerTrackHead
+
 @DETECTORS.register_module()
 class UniADTrack(MVXTwoStageDetector):
     """UniAD tracking part
@@ -36,7 +39,7 @@ class UniADTrack(MVXTwoStageDetector):
         use_grid_mask: bool = False,
         img_backbone: Optional[nn.Module] = None,
         img_neck: Optional[nn.Module] = None,
-        pts_bbox_head: Optional[nn.Module] = None,
+        pts_bbox_head: Optional[BEVFormerTrackHead] = None,
         train_cfg: Optional[Dict[str, Any]] = None,
         test_cfg: Optional[Dict[str, Any]] = None,
         pretrained: Optional[str] = None,
@@ -87,6 +90,8 @@ class UniADTrack(MVXTwoStageDetector):
             test_cfg=test_cfg,
             pretrained=pretrained,
         )
+        # Help static analyzers resolve custom head APIs such as get_bev_features.
+        self.pts_bbox_head: Optional[BEVFormerTrackHead] = pts_bbox_head
 
         self.grid_mask = GridMask(
             True, True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7

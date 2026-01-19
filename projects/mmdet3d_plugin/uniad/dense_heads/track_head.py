@@ -6,16 +6,20 @@
 #---------------------------------------------------------------------------------#
 
 import copy
+from typing import Any, Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import Linear, bias_init_with_prob
 from mmcv.utils import TORCH_VERSION, digit_version
+from torch import Tensor
 
 from mmdet.core import (multi_apply, multi_apply, reduce_mean)
 from mmdet.models.utils.transformer import inverse_sigmoid
 from mmdet.models import HEADS
 from mmdet.models.dense_heads import DETRHead
+from mmdet3d.core.bbox import BaseInstance3DBoxes
 from mmdet3d.core.bbox.coders import build_bbox_coder
 from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
 from mmcv.runner import force_fp32, auto_fp16
@@ -35,18 +39,18 @@ class BEVFormerTrackHead(DETRHead):
     """
 
     def __init__(self,
-                 *args,
-                 with_box_refine=False,
-                 as_two_stage=False,
-                 transformer=None,
-                 bbox_coder=None,
-                 num_cls_fcs=2,
-                 code_weights=None,
-                 bev_h=30,
-                 bev_w=30,
-                 past_steps=4,
-                 fut_steps=4,
-                 **kwargs):
+                 *args: Any,
+                 with_box_refine: bool = False,
+                 as_two_stage: bool = False,
+                 transformer: Optional[dict] = None,
+                 bbox_coder: Optional[dict] = None,
+                 num_cls_fcs: int = 2,
+                 code_weights: Optional[List[float]] = None,
+                 bev_h: int = 30,
+                 bev_w: int = 30,
+                 past_steps: int = 4,
+                 fut_steps: int = 4,
+                 **kwargs: Any) -> None:
 
         self.bev_h = bev_h
         self.bev_w = bev_w
@@ -80,7 +84,7 @@ class BEVFormerTrackHead(DETRHead):
         self.code_weights = nn.Parameter(torch.tensor(
             self.code_weights, requires_grad=False), requires_grad=False)
 
-    def _init_layers(self):
+    def _init_layers(self) -> None:
         """Initialize classification branch and regression branch of head."""
         cls_branch = []
         for _ in range(self.num_reg_fcs):
@@ -130,7 +134,7 @@ class BEVFormerTrackHead(DETRHead):
             self.bev_embedding = nn.Embedding(
                 self.bev_h * self.bev_w, self.embed_dims)
 
-    def init_weights(self):
+    def init_weights(self) -> None:
         """Initialize weights of the DeformDETR head."""
         self.transformer.init_weights()
         if self.loss_cls.use_sigmoid:
@@ -138,7 +142,10 @@ class BEVFormerTrackHead(DETRHead):
             for m in self.cls_branches:
                 nn.init.constant_(m[-1].bias, bias_init)
     
-    def get_bev_features(self, mlvl_feats, img_metas, prev_bev=None):
+    def get_bev_features(self,
+                         mlvl_feats: List[Tensor],
+                         img_metas: List[dict],
+                         prev_bev: Optional[Tensor] = None) -> Tuple[Tensor, Tensor]:
         bs, num_cam, _, _, _ = mlvl_feats[0].shape
         dtype = mlvl_feats[0].dtype
         bev_queries = self.bev_embedding.weight.to(dtype)
@@ -162,12 +169,12 @@ class BEVFormerTrackHead(DETRHead):
         return bev_embed, bev_pos
 
     def get_detections(
-        self, 
-        bev_embed,
-        object_query_embeds=None,
-        ref_points=None,
-        img_metas=None,
-    ):
+        self,
+        bev_embed: Tensor,
+        object_query_embeds: Optional[Tensor] = None,
+        ref_points: Optional[Tensor] = None,
+        img_metas: Optional[List[dict]] = None,
+    ) -> Dict[str, Optional[Tensor]]:
         assert bev_embed.shape[0] == self.bev_h * self.bev_w
         hs, init_reference, inter_references = self.transformer.get_states_and_refs(
             bev_embed,
@@ -237,11 +244,12 @@ class BEVFormerTrackHead(DETRHead):
         return outs
         
     def _get_target_single(self,
-                           cls_score,
-                           bbox_pred,
-                           gt_labels,
-                           gt_bboxes,
-                           gt_bboxes_ignore=None):
+                           cls_score: Tensor,
+                           bbox_pred: Tensor,
+                           gt_labels: Tensor,
+                           gt_bboxes: Tensor,
+                           gt_bboxes_ignore: Optional[Tensor] = None
+                           ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         """"Compute regression and classification targets for one image.
         Outputs from a single decoder layer of a single feature level are used.
         Args:
@@ -296,11 +304,12 @@ class BEVFormerTrackHead(DETRHead):
                 pos_inds, neg_inds)
 
     def get_targets(self,
-                    cls_scores_list,
-                    bbox_preds_list,
-                    gt_bboxes_list,
-                    gt_labels_list,
-                    gt_bboxes_ignore_list=None):
+                    cls_scores_list: List[Tensor],
+                    bbox_preds_list: List[Tensor],
+                    gt_bboxes_list: List[Tensor],
+                    gt_labels_list: List[Tensor],
+                    gt_bboxes_ignore_list: Optional[List[Tensor]] = None
+                    ) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor], int, int]:
         """"Compute regression and classification targets for a batch image.
         Outputs from a single decoder layer of a single feature level are used.
         Args:
@@ -347,11 +356,11 @@ class BEVFormerTrackHead(DETRHead):
                 bbox_weights_list, num_total_pos, num_total_neg)
 
     def loss_single(self,
-                    cls_scores,
-                    bbox_preds,
-                    gt_bboxes_list,
-                    gt_labels_list,
-                    gt_bboxes_ignore_list=None):
+                    cls_scores: Tensor,
+                    bbox_preds: Tensor,
+                    gt_bboxes_list: List[Tensor],
+                    gt_labels_list: List[Tensor],
+                    gt_bboxes_ignore_list: Optional[List[Tensor]] = None) -> Tuple[Tensor, Tensor]:
         """"Loss function for outputs from a single decoder layer of a single
         feature level.
         Args:
@@ -417,11 +426,11 @@ class BEVFormerTrackHead(DETRHead):
 
     @force_fp32(apply_to=('preds_dicts'))
     def loss(self,
-             gt_bboxes_list,
-             gt_labels_list,
-             preds_dicts,
-             gt_bboxes_ignore=None,
-             img_metas=None):
+             gt_bboxes_list: List[BaseInstance3DBoxes],
+             gt_labels_list: List[Tensor],
+             preds_dicts: Dict[str, Optional[Tensor]],
+             gt_bboxes_ignore: Optional[List[Tensor]] = None,
+             img_metas: Optional[List[dict]] = None) -> Dict[str, Tensor]:
         """"Loss function.
         Args:
 
@@ -503,7 +512,10 @@ class BEVFormerTrackHead(DETRHead):
         return loss_dict
 
     @force_fp32(apply_to=('preds_dicts'))
-    def get_bboxes(self, preds_dicts, img_metas, rescale=False):
+    def get_bboxes(self,
+                   preds_dicts: Dict[str, Tensor],
+                   img_metas: List[dict],
+                   rescale: bool = False) -> List[List[Any]]:
         """Generate bboxes from bbox head predictions.
         Args:
             preds_dicts (tuple[list[dict]]): Prediction results.
