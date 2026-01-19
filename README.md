@@ -36,6 +36,8 @@ We’re thrilled to announce ​**UniAD 2.0**, a milestone release delivering cr
 
 ​📅 ​**TODO List**
 - [x] Framework upgrade​ (`mmdet3d 1.0.0rc6`,  `torch 2.0.1+cu118`) → [Installation Guide](docs/INSTALL.md).
+- [x] Python 3.10-3.12 support (build from source) → [Installation Guide](docs/INSTALL.md#option-b-python-310-312-environment-colabmodern-systems).
+- [x] Google Colab support → [Colab Notebook](UniAD_Eval_Colab.ipynb).
 - [ ] Tools release for nuPlan and NAVSIM benchmark. [ETA 2025Q2]
 
 
@@ -82,7 +84,8 @@ We’re thrilled to announce ​**UniAD 2.0**, a milestone release delivering cr
 
 
 ## Getting Started <a name="start"></a>
-- [Installation](docs/INSTALL.md)
+- [Installation](docs/INSTALL.md) (Python 3.9-3.12 supported)
+- [Google Colab Notebook](UniAD_Eval_Colab.ipynb) (run in browser, no local GPU needed)
 - [Prepare Dataset](docs/DATA_PREP.md)
 - [Evaluation Example](docs/TRAIN_EVAL.md#example)
 - [GPU Requirements](docs/TRAIN_EVAL.md#gpu)

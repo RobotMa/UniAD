@@ -156,3 +156,6 @@ mmcv
 
 # vscode config file
 .vscode/
+
+# AI agent configuration files
+.claude/
