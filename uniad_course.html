@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniAD: Planning-Oriented Autonomous Driving — Interactive Course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --color-bg: #FAF7F2;
+  --color-bg-alt: #F2EDE4;
+  --color-bg-code: #1E1E2E;
+  --color-surface: #FFFFFF;
+  --color-surface-warm: #FFF8F0;
+  --color-border: #E0D8CC;
+  --color-border-light: #EDE8E0;
+  --color-text: #2C2417;
+  --color-text-secondary: #6B5E4E;
+  --color-text-muted: #9B8E7E;
+  --color-accent: #D9350A;
+  --color-accent-muted: #E8896A;
+  --color-accent-light: #FDF0EC;
+  --color-success: #2A7A3B;
+  --color-success-light: #EBF7EE;
+  --color-error: #C0392B;
+  --color-error-light: #FDF0EE;
+  --color-info: #1A6B8A;
+  --color-info-light: #E8F4F8;
+  --color-actor-1: #D9350A;
+  --color-actor-2: #1A6B8A;
+  --color-actor-3: #6B35A8;
+  --color-actor-4: #2A7A3B;
+  --color-actor-5: #B5860A;
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 3px rgba(44,36,23,0.08), 0 1px 2px rgba(44,36,23,0.04);
+  --shadow-md: 0 4px 12px rgba(44,36,23,0.10), 0 2px 4px rgba(44,36,23,0.06);
+  --shadow-lg: 0 8px 24px rgba(44,36,23,0.12), 0 4px 8px rgba(44,36,23,0.08);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ===== NAV ===== */
+#nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 50px;
+  background: rgba(250,247,242,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  gap: var(--space-4);
+}
+.nav-title {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.nav-dots {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.nav-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--color-border);
+  cursor: pointer;
+  border: none;
+  transition: background var(--duration-fast), transform var(--duration-fast);
+  position: relative;
+}
+.nav-dot:hover { transform: scale(1.3); background: var(--color-accent-muted); }
+.nav-dot.active { background: var(--color-accent); transform: scale(1.2); }
+.nav-dot.visited { background: var(--color-text-muted); }
+.nav-progress {
+  height: 3px;
+  background: var(--color-accent);
+  position: absolute;
+  bottom: 0; left: 0;
+  transition: width var(--duration-normal) var(--ease-out);
+}
+
+/* ===== MODULES ===== */
+.module {
+  min-height: 100dvh;
+  min-height: 100vh;
+  padding: calc(50px + var(--space-12)) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+}
+.module:nth-child(odd) { background: var(--color-bg); }
+.module:nth-child(even) { background: var(--color-bg-alt); }
+.module-full { max-width: 100%; padding-left: var(--space-8); padding-right: var(--space-8); }
+
+.module-number {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--color-border);
+  line-height: 1;
+  margin-bottom: var(--space-2);
+}
+.module-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+.module-title {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: var(--space-4);
+  color: var(--color-text);
+}
+.module-subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+/* ===== ANIMATIONS ===== */
+.animate-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+}
+.animate-in.visible { opacity: 1; transform: translateY(0); }
+.animate-in:nth-child(2) { transition-delay: 80ms; }
+.animate-in:nth-child(3) { transition-delay: 160ms; }
+.animate-in:nth-child(4) { transition-delay: 240ms; }
+.animate-in:nth-child(5) { transition-delay: 320ms; }
+
+/* ===== CARDS & GRIDS ===== */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-8) 0;
+}
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal);
+}
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.card-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+  margin-bottom: var(--space-3);
+}
+.card-title { font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-bottom: var(--space-2); }
+.card-desc { color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.6; }
+
+/* ===== TRANSLATION BLOCKS ===== */
+.translation-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin: var(--space-8) 0;
+}
+.translation-code {
+  background: var(--color-bg-code);
+  color: #CDD6F4;
+  padding: var(--space-6);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  position: relative;
+  overflow-x: hidden;
+}
+.translation-code pre, .translation-code code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: hidden;
+}
+.translation-english {
+  background: var(--color-surface-warm);
+  padding: var(--space-6);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  border-left: 3px solid var(--color-accent);
+}
+.translation-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.5;
+  font-weight: 600;
+  display: block;
+  margin-bottom: var(--space-3);
+}
+.tl { margin-bottom: var(--space-2); padding-left: var(--space-3); border-left: 2px solid var(--color-border); }
+.code-keyword { color: #CBA6F7; }
+.code-string { color: #A6E3A1; }
+.code-function { color: #89DCEB; }
+.code-property { color: #89B4FA; }
+.code-comment { color: #6C7086; font-style: italic; }
+.code-number { color: #FAB387; }
+@media (max-width: 768px) {
+  .translation-block { grid-template-columns: 1fr; }
+  .translation-english { border-left: none; border-top: 3px solid var(--color-accent); }
+}
+
+/* ===== CALLOUTS ===== */
+.callout {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  margin: var(--space-6) 0;
+}
+.callout-accent { background: var(--color-accent-light); border-left: 4px solid var(--color-accent); }
+.callout-info { background: var(--color-info-light); border-left: 4px solid var(--color-info); }
+.callout-warning { background: var(--color-error-light); border-left: 4px solid var(--color-error); }
+.callout-icon { font-size: 1.3rem; flex-shrink: 0; }
+.callout-title { font-weight: 700; font-family: var(--font-display); margin-bottom: var(--space-1); }
+
+/* ===== STEP CARDS ===== */
+.step-cards { display: flex; flex-direction: column; gap: var(--space-3); margin: var(--space-6) 0; }
+.step-card {
+  display: flex; align-items: flex-start; gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+.step-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--color-accent);
+  color: white; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+.step-body strong { display: block; font-family: var(--font-display); font-weight: 700; }
+.step-body p { margin: var(--space-1) 0 0; color: var(--color-text-secondary); font-size: var(--text-sm); }
+
+/* ===== FLOW STEPS ===== */
+.flow-pipeline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: var(--space-8) 0;
+}
+.flow-node {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-family: var(--font-display);
+  min-width: 100px;
+  cursor: pointer;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast), transform var(--duration-fast);
+  position: relative;
+}
+.flow-node:hover { border-color: var(--color-accent); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.flow-node.active-node { border-color: var(--color-accent); background: var(--color-accent-light); box-shadow: 0 0 0 3px rgba(217,53,10,0.15); }
+.flow-node .node-icon { font-size: 1.3rem; display: block; margin-bottom: var(--space-1); }
+.flow-arrow { color: var(--color-text-muted); font-size: 1.3rem; flex-shrink: 0; }
+.flow-node-desc {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  box-shadow: var(--shadow-sm);
+  min-height: 70px;
+  color: var(--color-text-secondary);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+.flow-node-desc strong { color: var(--color-text); font-family: var(--font-display); }
+
+/* ===== CHAT ANIMATION ===== */
+.chat-window {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  margin: var(--space-6) 0;
+}
+.chat-header {
+  background: var(--color-bg-code);
+  padding: var(--space-3) var(--space-5);
+  color: #CDD6F4;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.chat-dot { width: 10px; height: 10px; border-radius: 50%; }
+.chat-messages {
+  padding: var(--space-5);
+  min-height: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.chat-message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  animation: fadeSlideUp 0.3s var(--ease-out);
+}
+.chat-message.right { flex-direction: row-reverse; }
+.chat-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: var(--text-xs);
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+.chat-bubble {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  max-width: 75%;
+  box-shadow: var(--shadow-sm);
+}
+.chat-message.right .chat-bubble { background: var(--color-accent-light); }
+.chat-sender { font-size: var(--text-xs); font-weight: 700; font-family: var(--font-display); display: block; margin-bottom: var(--space-1); }
+.chat-bubble p { font-size: var(--text-sm); margin: 0; color: var(--color-text); }
+.chat-typing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+}
+.chat-typing-dots { display: flex; gap: 4px; align-items: center; }
+.typing-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--color-text-muted);
+  animation: typingBounce 1.4s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+.chat-controls {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg-alt);
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.chat-progress { font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-mono); }
+
+/* ===== BUTTONS ===== */
+.btn {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-accent);
+  background: var(--color-accent);
+  color: white;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.btn:hover { background: transparent; color: var(--color-accent); }
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.btn-secondary:hover { border-color: var(--color-text-muted); color: var(--color-text); }
+
+/* ===== QUIZ ===== */
+.quiz-container { margin: var(--space-6) 0; }
+.quiz-question-block { margin-bottom: var(--space-8); }
+.quiz-question { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-4); }
+.quiz-options { display: flex; flex-direction: column; gap: var(--space-2); }
+.quiz-option {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer; width: 100%;
+  text-align: left;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+  font-family: var(--font-body); font-size: var(--text-sm);
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--color-accent-muted); }
+.quiz-option.selected { border-color: var(--color-accent); background: var(--color-accent-light); }
+.quiz-option.correct { border-color: var(--color-success); background: var(--color-success-light); }
+.quiz-option.incorrect { border-color: var(--color-error); background: var(--color-error-light); }
+.quiz-option-radio {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+  transition: all var(--duration-fast);
+}
+.quiz-option.selected .quiz-option-radio { border-color: var(--color-accent); background: var(--color-accent); box-shadow: inset 0 0 0 3px white; }
+.quiz-feedback {
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height var(--duration-normal), opacity var(--duration-normal);
+  font-size: var(--text-sm); border-radius: var(--radius-sm); margin-top: var(--space-2);
+}
+.quiz-feedback.show { max-height: 200px; opacity: 1; padding: var(--space-3); }
+.quiz-feedback.success { background: var(--color-success-light); color: var(--color-success); }
+.quiz-feedback.error { background: var(--color-error-light); color: var(--color-error); }
+.quiz-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap; }
+
+/* ===== BEV VISUALIZER ===== */
+.bev-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin: var(--space-6) 0;
+  align-items: start;
+}
+.bev-cameras {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-2);
+}
+.cam-view {
+  background: var(--color-bg-code);
+  border-radius: var(--radius-sm);
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  color: #6C7086;
+  font-family: var(--font-mono);
+  border: 1px solid #313244;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--duration-fast);
+}
+.cam-view:hover { border-color: var(--color-accent); }
+.cam-label {
+  position: absolute;
+  top: 4px; left: 4px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+}
+.bev-map {
+  background: var(--color-bg-code);
+  border-radius: var(--radius-md);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #313244;
+}
+.bev-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(137,180,250,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(137,180,250,0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.bev-ego {
+  width: 16px; height: 24px;
+  background: var(--color-actor-1);
+  border-radius: 3px;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.bev-agent {
+  width: 12px; height: 18px;
+  background: var(--color-actor-2);
+  border-radius: 2px;
+  position: absolute;
+  z-index: 2;
+  transition: all 1s var(--ease-out);
+  opacity: 0;
+}
+.bev-traj {
+  position: absolute;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.bev-label {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #6C7086;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .bev-container { grid-template-columns: 1fr; }
+  .bev-cameras { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ===== ARCH DIAGRAM ===== */
+.arch-pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-6) 0;
+}
+.arch-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.arch-block {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  text-align: center;
+}
+.arch-block:hover { border-color: var(--color-accent); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.arch-block.lit { border-color: var(--color-accent); background: var(--color-accent-light); }
+.arch-connector {
+  width: 2px;
+  height: 24px;
+  background: var(--color-border);
+  margin-left: 40px;
+  flex-shrink: 0;
+}
+
+/* ===== GLOSSARY TOOLTIPS ===== */
+.term {
+  border-bottom: 1.5px dashed var(--color-accent-muted);
+  cursor: pointer;
+}
+.term:hover, .term.active {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.term-tooltip {
+  position: fixed;
+  background: var(--color-bg-code);
+  color: #CDD6F4;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  width: max(200px, min(320px, 80vw));
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+  z-index: 10000;
+}
+.term-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--color-bg-code);
+}
+.term-tooltip.flip::after {
+  top: auto; bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--color-bg-code);
+}
+.term-tooltip.visible { opacity: 1; }
+
+/* ===== FILE TREE ===== */
+.file-tree {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  margin: var(--space-6) 0;
+}
+.ft-root { margin: 0; }
+.ft-folder, .ft-file {
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--color-border-light);
+  margin-left: var(--space-4);
+}
+.ft-folder > .ft-name { color: var(--color-actor-2); font-weight: 600; }
+.ft-folder > .ft-name::before { content: '📁 '; }
+.ft-file > .ft-name::before { content: '📄 '; }
+.ft-desc {
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  margin-left: var(--space-3);
+  font-size: var(--text-xs);
+}
+.ft-children { margin-left: var(--space-4); }
+.ft-name { color: var(--color-text); }
+
+/* ===== ANIMATIONS KEYFRAMES ===== */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(217,53,10,0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(217,53,10,0); }
+  100% { box-shadow: 0 0 0 0 rgba(217,53,10,0); }
+}
+@keyframes drive {
+  0% { transform: translate(-50%, 60px); }
+  100% { transform: translate(-50%, -80px); }
+}
+@keyframes agentMove {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-30px); }
+}
+
+/* ===== BADGE LIST ===== */
+.badge-list { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-4) 0; }
+.badge-item {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  transition: border-color var(--duration-fast);
+}
+.badge-item:hover { border-color: var(--color-accent-muted); }
+.badge-code {
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  background: var(--color-bg-code); color: #CBA6F7;
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm);
+  white-space: nowrap; flex-shrink: 0;
+}
+.badge-desc { font-size: var(--text-sm); color: var(--color-text-secondary); }
+
+/* ===== HERO ===== */
+.hero-section {
+  min-height: 100dvh;
+  min-height: 100vh;
+  background: var(--color-bg-code);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: calc(50px + var(--space-8)) var(--space-6) var(--space-8);
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(137,180,250,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(137,180,250,0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.hero-tag {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-accent);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  font-family: var(--font-display);
+  position: relative;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 800;
+  color: #CDD6F4;
+  line-height: 1.1;
+  margin-bottom: var(--space-4);
+  position: relative;
+}
+.hero-title span { color: var(--color-accent); }
+.hero-subtitle {
+  font-size: var(--text-lg);
+  color: #BAC2DE;
+  max-width: 580px;
+  line-height: 1.7;
+  margin-bottom: var(--space-8);
+  position: relative;
+}
+.hero-meta {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: var(--space-10);
+  position: relative;
+}
+.hero-meta-item {
+  text-align: center;
+}
+.hero-meta-num {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: #CDD6F4;
+}
+.hero-meta-label {
+  font-size: var(--text-xs);
+  color: #6C7086;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.scroll-hint {
+  position: relative;
+  color: #6C7086;
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  animation: pulse-ring 2s infinite;
+  border-radius: 20px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid #313244;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .module-title { font-size: var(--text-3xl); }
+  .hero-title { font-size: 2rem; }
+  .module { padding: calc(50px + var(--space-8)) var(--space-4) var(--space-8); }
+  .flow-pipeline { flex-direction: column; align-items: flex-start; }
+  .flow-arrow { transform: rotate(90deg); }
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== SECTION SPACING ===== */
+.section { margin: var(--space-10) 0; }
+.section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin-bottom: var(--space-5);
+  color: var(--color-text);
+}
+.divider { height: 1px; background: var(--color-border); margin: var(--space-8) 0; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-title">UniAD Course</div>
+  <div class="nav-dots" id="nav-dots">
+    <button class="nav-dot active" onclick="scrollToModule(0)" title="Intro"></button>
+    <button class="nav-dot" onclick="scrollToModule(1)" title="What UniAD Does"></button>
+    <button class="nav-dot" onclick="scrollToModule(2)" title="BEV Encoding"></button>
+    <button class="nav-dot" onclick="scrollToModule(3)" title="Tracking"></button>
+    <button class="nav-dot" onclick="scrollToModule(4)" title="Motion & Map"></button>
+    <button class="nav-dot" onclick="scrollToModule(5)" title="Occupancy"></button>
+    <button class="nav-dot" onclick="scrollToModule(6)" title="Planning"></button>
+  </div>
+  <div style="width:80px; text-align:right;">
+    <span id="nav-label" style="font-size:0.7rem; color:var(--color-text-muted); font-family:var(--font-mono);">0/6</span>
+  </div>
+  <div class="nav-progress" id="nav-progress"></div>
+</nav>
+
+<!-- ====================================================
+     MODULE 0: HERO
+     ==================================================== -->
+<section class="hero-section" id="module-0">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-tag">CVPR 2023 · Award Candidate · Interactive Course</div>
+  <h1 class="hero-title">
+    How a Self-Driving Car<br><span>Thinks End-to-End</span>
+  </h1>
+  <p class="hero-subtitle">
+    UniAD turns six cameras into a driving decision in one unified framework.
+    This course explains how — with interactive animations, real code, and zero jargon you can't click on.
+  </p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <div class="hero-meta-num">6</div>
+      <div class="hero-meta-label">Modules</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="hero-meta-num">5</div>
+      <div class="hero-meta-label">Task Heads</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="hero-meta-num">~20min</div>
+      <div class="hero-meta-label">Read Time</div>
+    </div>
+  </div>
+  <button class="scroll-hint btn" onclick="scrollToModule(1)">Start Learning ↓</button>
+</section>
+
+<!-- ====================================================
+     MODULE 1: WHAT UNIAD DOES
+     ==================================================== -->
+<section class="module" id="module-1">
+  <div class="module-number animate-in">01</div>
+  <div class="module-label animate-in">The Big Picture</div>
+  <h2 class="module-title animate-in">What Does UniAD Actually Do?</h2>
+  <p class="module-subtitle animate-in">
+    Before any code — what problem is this solving, and why does it matter?
+  </p>
+
+  <div class="section animate-in">
+    <p style="color:var(--color-text-secondary); line-height:1.8; max-width:640px;">
+      Most self-driving systems are a chain of separate programs: one detects objects, another tracks them, another plans a route. Each program passes its output to the next. But errors compound — a bad detection makes a bad plan.
+    </p>
+    <div class="callout callout-accent" style="margin-top:var(--space-5);">
+      <div class="callout-icon">💡</div>
+      <div class="callout-content">
+        <strong class="callout-title">UniAD's Core Idea</strong>
+        <p>Train all tasks together, end-to-end, so that every part of the network learns to help the final goal: <em>safe driving</em>. Perception exists to serve planning.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">The 5 Tasks UniAD Solves — Together</h3>
+    <div class="card-grid animate-in">
+      <div class="card">
+        <div class="card-icon" style="background:#FDF0EC;">🎯</div>
+        <div class="card-title">Tracking</div>
+        <div class="card-desc">Find every car, pedestrian, and cyclist — and follow them across frames over time.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:#E8F4F8;">🗺️</div>
+        <div class="card-title">Map Segmentation</div>
+        <div class="card-desc">Detect lane lines, crossings, and road boundaries as a top-down map.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:#EBF7EE;">🔮</div>
+        <div class="card-title">Motion Forecasting</div>
+        <div class="card-desc">Predict where every agent will be 3 seconds from now — multiple possible futures.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:#F5F0FF;">🌫️</div>
+        <div class="card-title">Occupancy Prediction</div>
+        <div class="card-desc">Which grid cells will be occupied by moving objects in the future?</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:#FFFBE8;">🚗</div>
+        <div class="card-title">Planning</div>
+        <div class="card-desc">Generate a safe 3-second trajectory for the ego vehicle to follow.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Click a Stage to Explore the Pipeline</h3>
+    <div class="flow-pipeline" id="pipeline">
+      <div class="flow-node active-node" onclick="showNodeDesc('cameras')" id="node-cameras">
+        <span class="node-icon">📷</span>6 Cameras
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" onclick="showNodeDesc('bev')" id="node-bev">
+        <span class="node-icon">🗺️</span>BEV Encoder
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" onclick="showNodeDesc('track')" id="node-track">
+        <span class="node-icon">🎯</span>Track Head
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" onclick="showNodeDesc('map')" id="node-map">
+        <span class="node-icon">🗺️</span>Map Head
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" onclick="showNodeDesc('motion')" id="node-motion">
+        <span class="node-icon">🔮</span>Motion Head
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" onclick="showNodeDesc('occ')" id="node-occ">
+        <span class="node-icon">🌫️</span>Occ Head
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" onclick="showNodeDesc('plan')" id="node-plan">
+        <span class="node-icon">🚗</span>Plan Head
+      </div>
+    </div>
+    <div class="flow-node-desc" id="node-desc">
+      <strong>6 Cameras</strong> — The car has 6 cameras covering 360°: front, front-left, front-right, back, back-left, back-right. Each sees a 2D image. Together, they see the full world around the car.
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">How the Code Is Organized</h3>
+    <div class="file-tree">
+      <div class="ft-root">
+        <div class="ft-folder" style="margin-left:0; border-left:none;">
+          <span class="ft-name" style="font-size:var(--text-base);">projects/mmdet3d_plugin/uniad/</span>
+          <div class="ft-children">
+            <div class="ft-folder">
+              <span class="ft-name">detectors/</span>
+              <span class="ft-desc">The "conductor" — orchestrates all task heads</span>
+              <div class="ft-children">
+                <div class="ft-file"><span class="ft-name">uniad_e2e.py</span><span class="ft-desc">Main model: runs all 5 tasks in sequence</span></div>
+                <div class="ft-file"><span class="ft-name">uniad_track.py</span><span class="ft-desc">BEV encoding + tracking backbone</span></div>
+                <div class="ft-file"><span class="ft-name">bevformer.py</span><span class="ft-desc">BEVFormer encoder (camera → top-down map)</span></div>
+              </div>
+            </div>
+            <div class="ft-folder">
+              <span class="ft-name">dense_heads/</span>
+              <span class="ft-desc">Each task's specialized neural network</span>
+              <div class="ft-children">
+                <div class="ft-file"><span class="ft-name">track_head.py</span><span class="ft-desc">3D object detection + tracking queries</span></div>
+                <div class="ft-file"><span class="ft-name">seg_head_plugin/</span><span class="ft-desc">Lane & map segmentation</span></div>
+                <div class="ft-file"><span class="ft-name">motion_head.py</span><span class="ft-desc">Future trajectory prediction</span></div>
+                <div class="ft-file"><span class="ft-name">occ_head.py</span><span class="ft-desc">Future occupancy grid</span></div>
+                <div class="ft-file"><span class="ft-name">planning_head.py</span><span class="ft-desc">Ego vehicle trajectory output</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-container animate-in">
+    <h3 class="section-title">Quick Check</h3>
+    <div class="quiz-question-block" data-correct="opt-b" id="q1-block">
+      <div class="quiz-question">Why does UniAD train all tasks together instead of separately?</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-value="opt-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>It's faster to train one big model than five small ones.</span></button>
+        <button class="quiz-option" data-value="opt-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Errors in early tasks (like detection) compound into worse planning — joint training aligns all tasks toward safe driving.</span></button>
+        <button class="quiz-option" data-value="opt-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Each task requires a different type of GPU.</span></button>
+        <button class="quiz-option" data-value="opt-d" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The five tasks share the same loss function.</span></button>
+      </div>
+      <div class="quiz-feedback" id="q1-feedback"></div>
+    </div>
+    <div class="quiz-actions">
+      <button class="btn" onclick="checkSingleQuiz('q1-block', 'q1-feedback')">Check Answer</button>
+      <button class="btn btn-secondary" onclick="resetSingleQuiz('q1-block', 'q1-feedback')">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================
+     MODULE 2: BEV ENCODING
+     ==================================================== -->
+<section class="module" id="module-2" style="background:var(--color-bg-alt);">
+  <div class="module-number animate-in">02</div>
+  <div class="module-label animate-in">The Shared Foundation</div>
+  <h2 class="module-title animate-in">Bird's Eye View — Seeing the World from Above</h2>
+  <p class="module-subtitle animate-in">
+    Six perspective cameras. One top-down map. This is how UniAD creates a shared "canvas" for all its tasks.
+  </p>
+
+  <div class="section animate-in">
+    <p style="color:var(--color-text-secondary); line-height:1.8; max-width:640px; margin-bottom: var(--space-4);">
+      Each camera sees the world in <span class="term" data-definition="Perspective view: what you see when looking through a camera lens — nearby objects appear large, distant objects small. The image is distorted by distance.">perspective</span>. But to reason about where things are, it helps to think top-down — like a city map. UniAD uses <span class="term" data-definition="BEVFormer: Bird's Eye View Transformer. A neural network that takes images from multiple cameras and 'unwarps' them into a flat, top-down grid representation. Think of it as stitching together a satellite photo from ground-level cameras.">BEVFormer</span> to transform camera images into a <span class="term" data-definition="BEV: Bird's Eye View. A top-down representation of the scene, like looking straight down from above. Makes it easy to measure distances, detect lanes, and plan paths since everything is on one flat map.">BEV</span> feature map.
+    </p>
+    <div class="callout callout-info">
+      <div class="callout-icon">🧭</div>
+      <div class="callout-content">
+        <strong class="callout-title">The "Unfolding" Analogy</strong>
+        <p>Imagine taking 6 photos around a room and stitching them into a top-down floor plan. BEVFormer does this mathematically, using <span class="term" data-definition="Deformable attention: a type of transformer attention where each query point learns to look at specific locations in the input, rather than attending to everything. Much more efficient than standard attention for images.">deformable attention</span> to project image features onto a 200×200 grid.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Live BEV Demo — Watch the Transformation</h3>
+    <div class="bev-container">
+      <div>
+        <p style="font-size:var(--text-sm); color:var(--color-text-muted); margin-bottom:var(--space-3); font-family:var(--font-mono);">INPUT: 6 camera views</p>
+        <div class="bev-cameras" id="cam-grid">
+          <div class="cam-view" id="cam-fl"><div class="cam-label">FRONT-L</div><canvas width="80" height="45" id="canvas-fl"></canvas></div>
+          <div class="cam-view" id="cam-f"><div class="cam-label">FRONT</div><canvas width="80" height="45" id="canvas-f"></canvas></div>
+          <div class="cam-view" id="cam-fr"><div class="cam-label">FRONT-R</div><canvas width="80" height="45" id="canvas-fr"></canvas></div>
+          <div class="cam-view" id="cam-bl"><div class="cam-label">BACK-L</div><canvas width="80" height="45" id="canvas-bl"></canvas></div>
+          <div class="cam-view" id="cam-b"><div class="cam-label">BACK</div><canvas width="80" height="45" id="canvas-b"></canvas></div>
+          <div class="cam-view" id="cam-br"><div class="cam-label">BACK-R</div><canvas width="80" height="45" id="canvas-br"></canvas></div>
+        </div>
+        <button class="btn" style="margin-top:var(--space-4); width:100%;" onclick="animateBEV()">▶ Project to BEV</button>
+      </div>
+      <div>
+        <p style="font-size:var(--text-sm); color:var(--color-text-muted); margin-bottom:var(--space-3); font-family:var(--font-mono);">OUTPUT: 200×200 BEV map</p>
+        <div class="bev-map" id="bev-map">
+          <div class="bev-grid"></div>
+          <div class="bev-label">bev_embed [B, 200, 200, 256]</div>
+          <div class="bev-ego"></div>
+          <!-- Agents added by JS -->
+          <canvas id="bev-canvas" width="200" height="200" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:0;transition:opacity 0.5s;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Code ↔ English: The Forward Pass</h3>
+    <div class="translation-block">
+      <div class="translation-code">
+        <span class="translation-label">CODE (uniad_track.py)</span>
+        <pre><code><span class="code-comment"># img shape: [B, T, N, C, H, W]</span>
+<span class="code-comment"># B=batch, T=time frames, N=6 cameras</span>
+bev_embed, bev_pos = <span class="code-function">self.pts_bbox_head</span>(
+    mlvl_feats,   <span class="code-comment"># multi-scale img features</span>
+    bev_queries,  <span class="code-comment"># learnable BEV grid queries</span>
+    prev_bev,     <span class="code-comment"># previous frame's BEV</span>
+)
+<span class="code-comment"># bev_embed: [B, 200*200, 256]</span></code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">The input is a stack of images: batch × time × 6 cameras.</p>
+          <p class="tl">The BEV head takes multi-scale image features (detail at different zoom levels)...</p>
+          <p class="tl">...and 40,000 learnable "questions" — one for each cell in the 200×200 top-down grid.</p>
+          <p class="tl">It also takes the previous frame's BEV map for temporal continuity (like short-term memory).</p>
+          <p class="tl">Output: 40,000 feature vectors — one per grid cell — each 256 numbers long.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Why Temporal History Matters</h3>
+    <div class="step-cards">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Frame N-2: car is here</strong>
+          <p>The BEV map stores a feature snapshot. <span class="term" data-definition="queue_length: how many past frames to keep in memory. UniAD uses queue_length=3 for end-to-end training, meaning it looks at the last 3 time steps to build a richer understanding of the scene.">queue_length=3</span> in the config.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Frame N-1: car moved a little</strong>
+          <p>BEVFormer warps the previous BEV using ego-motion (where the car drove), aligning them in the same coordinate frame.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Frame N: fuse for richer BEV</strong>
+          <p>Current frame features are combined with aligned history. Objects that were briefly occluded can still be reasoned about.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-container animate-in">
+    <h3 class="section-title">Quick Check</h3>
+    <div class="quiz-question-block" data-correct="opt-c" id="q2-block">
+      <div class="quiz-question">The BEV map has shape <code>[B, 200×200, 256]</code>. What does the 256 represent?</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-value="opt-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The number of cameras.</span></button>
+        <button class="quiz-option" data-value="opt-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The image pixel resolution.</span></button>
+        <button class="quiz-option" data-value="opt-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>A feature vector — 256 learned numbers describing what's at that location.</span></button>
+        <button class="quiz-option" data-value="opt-d" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The number of object classes the model knows.</span></button>
+      </div>
+      <div class="quiz-feedback" id="q2-feedback"></div>
+    </div>
+    <div class="quiz-actions">
+      <button class="btn" onclick="checkSingleQuiz('q2-block', 'q2-feedback')">Check Answer</button>
+      <button class="btn btn-secondary" onclick="resetSingleQuiz('q2-block', 'q2-feedback')">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================
+     MODULE 3: TRACKING
+     ==================================================== -->
+<section class="module" id="module-3">
+  <div class="module-number animate-in">03</div>
+  <div class="module-label animate-in">Perception</div>
+  <h2 class="module-title animate-in">Tracking — Knowing Who's Around You</h2>
+  <p class="module-subtitle animate-in">
+    Detect objects in 3D space, and keep following them across time — even when they disappear momentarily.
+  </p>
+
+  <div class="section animate-in">
+    <p style="color:var(--color-text-secondary); line-height:1.8; max-width:640px; margin-bottom: var(--space-4);">
+      Traditional object detectors find things in each frame independently. But a self-driving car needs to <em>track</em> agents over time — "that's the same blue sedan I saw 3 frames ago, it's now 8 meters closer." UniAD uses a transformer-based tracker with a <span class="term" data-definition="Memory bank: a rolling buffer that stores features of recently seen objects. If an object disappears (say, behind a truck), it's stored in the memory bank for up to miss_tolerance=5 frames, then re-associated if it reappears.">memory bank</span>.
+    </p>
+
+    <div class="badge-list">
+      <div class="badge-item">
+        <code class="badge-code">num_query=900</code>
+        <span class="badge-desc">Up to 900 objects can be tracked simultaneously in one scene</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">miss_tolerance=5</code>
+        <span class="badge-desc">An object can vanish for 5 frames before being dropped from the tracker</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">embed_dims=256</code>
+        <span class="badge-desc">Each object is represented as a 256-dimensional feature vector (<span class="term" data-definition="Query: in transformer models, a query is a learnable vector that 'asks' the model for information about a specific thing. Here, each query represents one potential object in the scene.">query</span>)</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">score_thresh=0.2</code>
+        <span class="badge-desc">Only objects detected with >20% confidence are kept</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">How Tracking Works — Component Chat</h3>
+    <div class="chat-window">
+      <div class="chat-header">
+        <div class="chat-dot" style="background:#FF5F56;"></div>
+        <div class="chat-dot" style="background:#FFBD2E;"></div>
+        <div class="chat-dot" style="background:#27C93F;"></div>
+        <span style="margin-left:var(--space-3);">UniAD Tracker — Internal Comms</span>
+      </div>
+      <div class="chat-messages" id="track-chat"></div>
+      <div class="chat-typing" id="track-typing" style="display:none;">
+        <div class="chat-avatar" id="track-typing-avatar" style="background:var(--color-actor-1);">B</div>
+        <div class="chat-typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+      </div>
+      <div class="chat-controls">
+        <button class="btn" onclick="playChatTrack()">Next ▶</button>
+        <button class="btn btn-secondary" onclick="playChatAll('track')">Play All</button>
+        <button class="btn btn-secondary" onclick="resetChatTrack()">↺ Replay</button>
+        <span class="chat-progress" id="track-progress">0 / 6</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Code ↔ English: The Query Interaction Module</h3>
+    <div class="translation-block">
+      <div class="translation-code">
+        <span class="translation-label">CODE (uniad_track.py)</span>
+        <pre><code><span class="code-comment"># QIM = Query Interaction Module</span>
+<span class="code-comment"># Decides which tracks survive each frame</span>
+qim_args = <span class="code-function">dict</span>(
+    qim_type=<span class="code-string">"QIMBase"</span>,
+    merger_dropout=<span class="code-number">0</span>,
+    update_query_pos=<span class="code-keyword">False</span>,
+    fp_ratio=<span class="code-number">0.3</span>,   <span class="code-comment"># false positive ratio</span>
+    random_drop=<span class="code-number">0.1</span>,  <span class="code-comment"># drop 10% of tracks randomly</span>
+)</code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">The Query Interaction Module is the bouncer at the door — it decides which tracked objects continue to the next frame.</p>
+          <p class="tl">30% of "detections" during training are deliberately wrong (false positives), to teach robustness.</p>
+          <p class="tl">10% of real tracks are randomly dropped during training, so the model learns to recover from lost tracks.</p>
+          <p class="tl">This makes the tracker much more robust in the real world where objects suddenly appear and disappear.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Two-Stage Training: Why It Matters</h3>
+    <div class="step-cards">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Stage 1 — Perception Only</strong>
+          <p>Train only Track Head + Map Head. The network learns to reliably detect objects before worrying about planning. Uses 5 frames of history (<code>queue_length=5</code>). Result: AMOTA 0.394.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Stage 2 — End-to-End</strong>
+          <p>Unfreeze everything and add Motion, Occ, and Planning heads. Now the tracker learns what features are actually useful for planning. Uses 3 frames (<code>queue_length=3</code>).</p>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-icon">🔑</div>
+      <div class="callout-content">
+        <strong class="callout-title">Why Stage 1 First?</strong>
+        <p>Without a stable perception backbone, training everything at once causes the model to "collapse" — the planner can't learn if it keeps getting garbage detections. Stage 1 provides a warm start.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-container animate-in">
+    <h3 class="section-title">Scenario Check</h3>
+    <div class="quiz-question-block" data-correct="opt-b" id="q3-block">
+      <div class="quiz-question">A pedestrian walks behind a parked bus for 3 frames and reappears on the other side. What happens in UniAD's tracker?</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-value="opt-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The pedestrian is deleted and re-detected as a new object when they reappear.</span></button>
+        <button class="quiz-option" data-value="opt-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The pedestrian's query is held in the memory bank (miss_tolerance=5). When they reappear, the same ID is re-associated.</span></button>
+        <button class="quiz-option" data-value="opt-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The camera switches to infrared to see through the bus.</span></button>
+        <button class="quiz-option" data-value="opt-d" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The model pauses and waits for the pedestrian to reappear before planning.</span></button>
+      </div>
+      <div class="quiz-feedback" id="q3-feedback"></div>
+    </div>
+    <div class="quiz-actions">
+      <button class="btn" onclick="checkSingleQuiz('q3-block', 'q3-feedback')">Check Answer</button>
+      <button class="btn btn-secondary" onclick="resetSingleQuiz('q3-block', 'q3-feedback')">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================
+     MODULE 4: MAP & MOTION
+     ==================================================== -->
+<section class="module" id="module-4" style="background:var(--color-bg-alt);">
+  <div class="module-number animate-in">04</div>
+  <div class="module-label animate-in">Prediction</div>
+  <h2 class="module-title animate-in">Map & Motion — Reading Roads, Predicting Futures</h2>
+  <p class="module-subtitle animate-in">
+    Two tasks that feed each other: map tells motion where roads are, motion tells planning where agents will go.
+  </p>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Map Segmentation (Seg Head)</h3>
+    <p style="color:var(--color-text-secondary); line-height:1.8; max-width:640px; margin-bottom: var(--space-4);">
+      The map head reads the BEV feature map and outputs a vectorized road map — lane dividers, crosswalks, and road edges as geometric shapes. It uses a <span class="term" data-definition="DETR-style: Detection Transformer. Instead of sliding windows, DETR uses a fixed set of 'queries' that each predict one lane element. The Hungarian algorithm matches predictions to ground truth during training.">DETR-style</span> query approach: 100 queries, each predicting one lane element.
+    </p>
+    <div class="translation-block animate-in">
+      <div class="translation-code">
+        <span class="translation-label">CODE (uniad_e2e.py)</span>
+        <pre><code><span class="code-keyword">if</span> self.with_seg_head:
+    losses_seg, outs_seg = \
+        self.seg_head.<span class="code-function">forward_train</span>(
+            bev_embed,   <span class="code-comment"># the shared top-down map</span>
+            img_metas,
+            gt_lane_labels,
+            gt_lane_bboxes,
+            gt_lane_masks,
+        )
+    losses_seg = self.<span class="code-function">loss_weighted_and_prefixed</span>(
+        losses_seg, prefix=<span class="code-string">'map'</span>
+    )</code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">If the map head exists, run it on the BEV feature map.</p>
+          <p class="tl">Give it the ground-truth lane labels, bounding boxes, and masks to learn from.</p>
+          <p class="tl">Get back the map loss (how wrong our lane predictions were)...</p>
+          <p class="tl">...and the map output (predicted lanes) which feeds into the Motion Head.</p>
+          <p class="tl">Prefix the loss with "map." so we can tell it apart from the tracking or planning losses.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Motion Forecasting (Motion Head)</h3>
+    <p style="color:var(--color-text-secondary); line-height:1.8; max-width:640px; margin-bottom: var(--space-4);">
+      For each tracked agent, the motion head predicts <span class="term" data-definition="num_anchor=6: the model predicts 6 possible future trajectories per agent (like 'turn left', 'go straight', 'turn right', etc.), then picks the most likely one. This is called multimodal prediction.">6 possible trajectories</span> 3 seconds into the future. It uses a <span class="term" data-definition="Transformer decoder: a stack of attention layers that takes object queries and refines them by attending to the BEV map and lane information. It can 'ask' which lanes are nearby and adjust trajectory predictions accordingly.">transformer decoder</span> that attends to both the BEV map and the map head's lane outputs.
+    </p>
+    <div class="badge-list">
+      <div class="badge-item">
+        <code class="badge-code">predict_steps=12</code>
+        <span class="badge-desc">Predict 12 time steps at 0.5s each = 6 seconds into the future</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">num_anchor=6</code>
+        <span class="badge-desc">6 possible futures per agent — "multimodal" prediction</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">minADE: 0.71m</code>
+        <span class="badge-desc">The best prediction is on average only 0.71m off — state of the art</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">How Motion Uses Both BEV and Map</h3>
+    <div class="step-cards">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Input: Track queries + BEV embed + map output</strong>
+          <p>The motion head receives the 256-dimensional feature for each tracked agent, the full BEV, and the predicted lane structure.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Agent-to-agent attention</strong>
+          <p>Each agent's query attends to all other agents — "where is the car ahead of me going?" This enables socially-aware predictions.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Agent-to-map attention</strong>
+          <p>Queries also attend to nearby lane features: "is there a left-turn lane here?" This constrains predictions to road-plausible trajectories.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Output: traj_query for occupancy</strong>
+          <p>The refined trajectory queries are passed to the Occ Head — not just the predicted coordinates, but the full feature vectors, so occupancy can learn from motion context.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-container animate-in">
+    <h3 class="section-title">Quick Check</h3>
+    <div class="quiz-question-block" data-correct="opt-d" id="q4-block">
+      <div class="quiz-question">The motion head has <code>num_anchor=6</code>. What would be a real-world consequence of setting this to 1?</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-value="opt-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The model would train 6× faster.</span></button>
+        <button class="quiz-option" data-value="opt-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The model would detect 6 fewer objects per scene.</span></button>
+        <button class="quiz-option" data-value="opt-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The BEV map would be smaller.</span></button>
+        <button class="quiz-option" data-value="opt-d" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The model could only predict one possible future per agent — it couldn't handle uncertainty (e.g., "will this car turn left or go straight?").</span></button>
+      </div>
+      <div class="quiz-feedback" id="q4-feedback"></div>
+    </div>
+    <div class="quiz-actions">
+      <button class="btn" onclick="checkSingleQuiz('q4-block', 'q4-feedback')">Check Answer</button>
+      <button class="btn btn-secondary" onclick="resetSingleQuiz('q4-block', 'q4-feedback')">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================
+     MODULE 5: OCCUPANCY
+     ==================================================== -->
+<section class="module" id="module-5">
+  <div class="module-number animate-in">05</div>
+  <div class="module-label animate-in">Scene Understanding</div>
+  <h2 class="module-title animate-in">Occupancy — What Space Will Be Taken?</h2>
+  <p class="module-subtitle animate-in">
+    Instead of tracking individual objects, think about space: which grid cells will be dangerous in 2 seconds?
+  </p>
+
+  <div class="section animate-in">
+    <p style="color:var(--color-text-secondary); line-height:1.8; max-width:640px; margin-bottom: var(--space-4);">
+      Tracking gives you a list of objects with IDs. But the planner needs to know about space — "don't drive into that cell." The <span class="term" data-definition="Occupancy grid: a top-down map divided into cells (like graph paper). Each cell stores the probability that it will be occupied by a moving object at a given time step. 1 = definitely blocked, 0 = free.">occupancy head</span> predicts a <span class="term" data-definition="bev_size=(200,200): the occupancy grid has the same 200×200 resolution as the BEV map. Each cell covers roughly 0.5m × 0.5m of real space, so the grid covers a 100m × 100m area around the car.">200×200 grid</span> for each of the next 4 time steps, answering: "will this square meter be occupied?"
+    </p>
+    <div class="callout callout-accent">
+      <div class="callout-icon">💡</div>
+      <div class="callout-content">
+        <strong class="callout-title">Objects vs. Space</strong>
+        <p>Tracking is like knowing "Bob's car is at position (x,y)." Occupancy is like coloring a map: "these 12 cells will be red (dangerous) in 2 seconds." The planner prefers the map — it's safer to reason about space than about individual objects.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Occ Head Architecture</h3>
+    <div class="step-cards">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Inputs: BEV + motion queries</strong>
+          <p>Takes the 200×200 BEV feature map <em>plus</em> the trajectory queries from the Motion Head. Each tracked agent contributes its predicted future positions.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Transformer decoder over BEV</strong>
+          <p><code>receptive_field=3</code> past frames + <code>n_future=4</code> future frames. The decoder attends to the BEV and agent trajectory queries simultaneously.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Instance segmentation in future</strong>
+          <p>Not just "is this cell occupied" but <em>which</em> tracked instance will be there. This enables collision attribution: "car #3 caused this collision."</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Output to planning</strong>
+          <p>The predicted occupancy map is the safety constraint for the planner — the planned trajectory must avoid all high-occupancy cells.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Code ↔ English: Running the Occ Head</h3>
+    <div class="translation-block">
+      <div class="translation-code">
+        <span class="translation-label">CODE (uniad_e2e.py)</span>
+        <pre><code><span class="code-comment"># Edge case: no tracked objects in scene</span>
+<span class="code-keyword">if</span> outs_motion[<span class="code-string">'track_query'</span>].shape[<span class="code-number">1</span>] == <span class="code-number">0</span>:
+    outs_motion[<span class="code-string">'track_query'</span>] = \
+        torch.<span class="code-function">zeros</span>((<span class="code-number">1</span>, <span class="code-number">1</span>, <span class="code-number">256</span>)).<span class="code-function">to</span>(bev_embed)
+    outs_motion[<span class="code-string">'traj_query'</span>] = \
+        torch.<span class="code-function">zeros</span>((<span class="code-number">3</span>,<span class="code-number">1</span>,<span class="code-number">1</span>,<span class="code-number">6</span>,<span class="code-number">256</span>)).<span class="code-function">to</span>(bev_embed)
+
+losses_occ = self.occ_head.<span class="code-function">forward_train</span>(
+    bev_embed, outs_motion,
+    gt_segmentation=gt_segmentation,
+    gt_instance=gt_instance,
+)</code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">Sometimes a scene has no tracked objects at all (empty road). Protect against a crash: fill with dummy zero-vectors.</p>
+          <p class="tl">A 1×1×256 dummy track and a 3-layer trajectory query of all zeros keeps the shape valid.</p>
+          <p class="tl">Then run the occupancy head with the real BEV features and the motion outputs.</p>
+          <p class="tl">Ground truth: what cells were actually occupied (segmentation) and which instance was there.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-container animate-in">
+    <h3 class="section-title">Scenario Check</h3>
+    <div class="quiz-question-block" data-correct="opt-c" id="q5-block">
+      <div class="quiz-question">You're building a safety system on top of UniAD. A cyclist is predicted to occupy cells in the ego vehicle's planned path 2 seconds from now. What should the planner do?</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-value="opt-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Ignore it — occupancy is just a prediction and might be wrong.</span></button>
+        <button class="quiz-option" data-value="opt-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Stop the car immediately.</span></button>
+        <button class="quiz-option" data-value="opt-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Replan a trajectory that avoids those cells — the occupancy map is a safety constraint for the planner, not just a visualization.</span></button>
+        <button class="quiz-option" data-value="opt-d" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Switch to LIDAR mode for a second opinion.</span></button>
+      </div>
+      <div class="quiz-feedback" id="q5-feedback"></div>
+    </div>
+    <div class="quiz-actions">
+      <button class="btn" onclick="checkSingleQuiz('q5-block', 'q5-feedback')">Check Answer</button>
+      <button class="btn btn-secondary" onclick="resetSingleQuiz('q5-block', 'q5-feedback')">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================
+     MODULE 6: PLANNING
+     ==================================================== -->
+<section class="module" id="module-6" style="background:var(--color-bg-alt);">
+  <div class="module-number animate-in">06</div>
+  <div class="module-label animate-in">The Final Decision</div>
+  <h2 class="module-title animate-in">Planning — Choosing Where to Go</h2>
+  <p class="module-subtitle animate-in">
+    Everything so far was in service of this: generate a safe 3-second path, guided by a high-level command.
+  </p>
+
+  <div class="section animate-in">
+    <p style="color:var(--color-text-secondary); line-height:1.8; max-width:640px; margin-bottom: var(--space-4);">
+      The planning head takes the BEV features, the motion head's scene understanding, and a <span class="term" data-definition="command: a high-level navigation instruction, encoded as one of 3 integers: 0=turn left, 1=go straight, 2=turn right. This comes from a route planner (like Google Maps telling you to 'turn right in 200m').">navigation command</span> (turn left / go straight / turn right). It outputs a sequence of 6 waypoints — where the car should be at each 0.5-second step.
+    </p>
+
+    <div class="badge-list animate-in">
+      <div class="badge-item">
+        <code class="badge-code">planning_steps=6</code>
+        <span class="badge-desc">6 waypoints × 0.5s each = 3 seconds of planned trajectory</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">navi_embed</code>
+        <span class="badge-desc">3-entry embedding: each command (left/straight/right) becomes a 256-dim vector</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">avg.Col=0.29%</code>
+        <span class="badge-desc">Planned trajectories collide with obstacles only 0.29% of the time — state of the art</span>
+      </div>
+      <div class="badge-item">
+        <code class="badge-code">use_col_optim</code>
+        <span class="badge-desc">Optional: post-processing that nudges waypoints away from occupied cells using gradient descent</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">Code ↔ English: The Planning Head</h3>
+    <div class="translation-block">
+      <div class="translation-code">
+        <span class="translation-label">CODE (planning_head.py)</span>
+        <pre><code><span class="code-comment"># navi_embed: turn left/straight/right → vector</span>
+self.navi_embed = nn.<span class="code-function">Embedding</span>(<span class="code-number">3</span>, embed_dims)
+
+<span class="code-comment"># reg_branch: predict 6 (x,y) waypoints</span>
+self.reg_branch = nn.<span class="code-function">Sequential</span>(
+    nn.<span class="code-function">Linear</span>(embed_dims, embed_dims),
+    nn.<span class="code-function">ReLU</span>(),
+    nn.<span class="code-function">Linear</span>(embed_dims, planning_steps * <span class="code-number">2</span>),
+)
+<span class="code-comment"># output shape: [B, 6, 2] = 6 (x,y) points</span></code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">The navigation command (0, 1, or 2) is turned into a 256-number vector. "Turn left" looks different from "go straight" in this space.</p>
+          <p class="tl">A small neural network (two linear layers with a ReLU in between)...</p>
+          <p class="tl">...takes the combined BEV + motion + command feature and outputs 12 numbers.</p>
+          <p class="tl">12 = 6 steps × 2 coordinates (x, y). These are the planned waypoints in the car's local frame.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">The Full Journey — Everything Together</h3>
+    <p style="color:var(--color-text-secondary); margin-bottom:var(--space-4); font-size:var(--text-sm);">Click each node to see what it contributes to the final plan.</p>
+    <div class="arch-pipeline" id="arch-pipeline">
+      <div class="arch-row">
+        <div class="arch-block" onclick="showArchInfo('cameras')" id="arch-cameras">📷 6 Cameras</div>
+        <span style="color:var(--color-text-muted);">→</span>
+        <div class="arch-block" onclick="showArchInfo('bev')" id="arch-bev">🗺️ BEVFormer</div>
+        <span style="color:var(--color-text-muted);">→</span>
+        <div class="arch-block" onclick="showArchInfo('track')" id="arch-track">🎯 Track Head</div>
+      </div>
+      <div style="width:2px;height:24px;background:var(--color-border);margin-left:160px;"></div>
+      <div class="arch-row">
+        <div class="arch-block" onclick="showArchInfo('map')" id="arch-map">🗺️ Map Head</div>
+        <span style="color:var(--color-text-muted);">+</span>
+        <div class="arch-block" onclick="showArchInfo('motion')" id="arch-motion">🔮 Motion Head</div>
+      </div>
+      <div style="width:2px;height:24px;background:var(--color-border);margin-left:60px;"></div>
+      <div class="arch-row">
+        <div class="arch-block" onclick="showArchInfo('occ')" id="arch-occ">🌫️ Occ Head</div>
+        <span style="color:var(--color-text-muted);">→</span>
+        <div class="arch-block" onclick="showArchInfo('plan')" id="arch-plan" style="border-color:var(--color-accent);background:var(--color-accent-light);">🚗 Plan Head</div>
+        <span style="color:var(--color-text-muted);">→</span>
+        <div class="arch-block" style="border-color:var(--color-success);background:var(--color-success-light);">✅ Trajectory</div>
+      </div>
+    </div>
+    <div class="flow-node-desc" id="arch-desc">Click any block above to see what it contributes to the final planning decision.</div>
+  </div>
+
+  <div class="section animate-in">
+    <h3 class="section-title">The Loss Hierarchy</h3>
+    <p style="color:var(--color-text-secondary); font-size:var(--text-sm); margin-bottom:var(--space-4);">
+      UniAD optimizes all tasks simultaneously. Each task's loss is weighted by the <span class="term" data-definition="task_loss_weight: a dictionary that scales each task's loss contribution to the total. All are set to 1.0 in the default config, meaning they contribute equally. You could upweight planning (e.g., 2.0) to prioritize driving safety over tracking accuracy.">task_loss_weight</span> dict:
+    </p>
+    <div class="translation-block animate-in">
+      <div class="translation-code">
+        <span class="translation-label">CODE (uniad_e2e.py)</span>
+        <pre><code>task_loss_weight = <span class="code-function">dict</span>(
+    track=<span class="code-number">1.0</span>,
+    map=<span class="code-number">1.0</span>,
+    motion=<span class="code-number">1.0</span>,
+    occ=<span class="code-number">1.0</span>,
+    planning=<span class="code-number">1.0</span>
+)
+<span class="code-comment"># total_loss = sum of all weighted task losses</span>
+<span class="code-keyword">for</span> k, v <span class="code-keyword">in</span> losses.items():
+    losses[k] = torch.<span class="code-function">nan_to_num</span>(v)</code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">Each of the 5 tasks contributes equally to the total training signal.</p>
+          <p class="tl">If you want the model to prioritize planning safety, increase planning's weight to 2.0.</p>
+          <p class="tl">The final line is a safety net: if any loss becomes NaN (a math error), replace it with 0 so training doesn't crash.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-container animate-in">
+    <h3 class="section-title">Final Challenge</h3>
+    <div class="quiz-question-block" data-correct="opt-b" id="q6-block">
+      <div class="quiz-question">You want to fine-tune UniAD to be more aggressive about avoiding pedestrians. Without changing the model architecture, what's the most targeted configuration change?</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-value="opt-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Increase num_query from 900 to 1800 to detect more objects.</span></button>
+        <button class="quiz-option" data-value="opt-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Increase the weight on the planning collision loss and/or the occupancy loss in task_loss_weight, so the model is penalized more heavily for unsafe paths.</span></button>
+        <button class="quiz-option" data-value="opt-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Reduce planning_steps from 6 to 3 so the model plans shorter trajectories.</span></button>
+        <button class="quiz-option" data-value="opt-d" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Set miss_tolerance to 0 so tracks are never dropped.</span></button>
+      </div>
+      <div class="quiz-feedback" id="q6-feedback"></div>
+    </div>
+    <div class="quiz-actions">
+      <button class="btn" onclick="checkSingleQuiz('q6-block', 'q6-feedback')">Check Answer</button>
+      <button class="btn btn-secondary" onclick="resetSingleQuiz('q6-block', 'q6-feedback')">Reset</button>
+    </div>
+  </div>
+
+  <!-- Completion card -->
+  <div class="section animate-in">
+    <div style="text-align:center; padding: var(--space-12) var(--space-6); background:var(--color-bg-code); border-radius:var(--radius-lg); margin-top:var(--space-8);">
+      <div style="font-size:3rem; margin-bottom:var(--space-4);">🎉</div>
+      <h3 style="font-family:var(--font-display); font-size:var(--text-2xl); color:#CDD6F4; margin-bottom:var(--space-3);">Course Complete!</h3>
+      <p style="color:#BAC2DE; max-width:480px; margin:0 auto var(--space-6); line-height:1.7; font-size:var(--text-sm);">
+        You've traced the full UniAD pipeline — from raw camera pixels to a safe driving trajectory.
+        You understand BEV encoding, transformer-based tracking, multimodal motion prediction, occupancy grids, and planning-oriented training.
+      </p>
+      <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
+        <a href="https://arxiv.org/abs/2212.10156" target="_blank" style="text-decoration:none;">
+          <button class="btn">Read the Paper →</button>
+        </a>
+        <button class="btn btn-secondary" style="border-color:#6C7086;color:#CDD6F4;" onclick="scrollToModule(0)">↺ Start Over</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ===================================================
+// NAVIGATION
+// ===================================================
+const modules = document.querySelectorAll('[id^="module-"]');
+const dots = document.querySelectorAll('.nav-dot');
+const navProgress = document.getElementById('nav-progress');
+const navLabel = document.getElementById('nav-label');
+let currentModule = 0;
+
+function scrollToModule(idx) {
+  const el = document.getElementById('module-' + idx);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateNav() {
+  let active = 0;
+  const scrollY = window.scrollY;
+  modules.forEach((m, i) => {
+    const top = m.getBoundingClientRect().top + scrollY - 100;
+    if (scrollY >= top) active = i;
+  });
+  currentModule = active;
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'visited');
+    if (i === active) d.classList.add('active');
+    else if (i < active) d.classList.add('visited');
+  });
+  const pct = (active / (modules.length - 1)) * 100;
+  navProgress.style.width = pct + '%';
+  navLabel.textContent = active + '/' + (modules.length - 1);
+}
+
+window.addEventListener('scroll', updateNav, { passive: true });
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' && currentModule < modules.length - 1) scrollToModule(currentModule + 1);
+  if (e.key === 'ArrowUp' && currentModule > 0) scrollToModule(currentModule - 1);
+});
+
+// ===================================================
+// INTERSECTION OBSERVER — animate-in
+// ===================================================
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.animate-in').forEach(el => observer.observe(el));
+
+// ===================================================
+// PIPELINE NODE DESCRIPTIONS
+// ===================================================
+const nodeDescriptions = {
+  cameras: '<strong>6 Cameras (360° Coverage)</strong> — Front, front-left, front-right, back, back-left, back-right. Each captures a 2D RGB image at ~12 Hz. Input shape: [B, T, 6, 3, H, W] where T is the queue_length (3 frames of history).',
+  bev: '<strong>BEVFormer (BEV Encoder)</strong> — Uses deformable attention to project multi-scale image features onto a 200×200 top-down grid. Incorporates temporal history by warping the previous BEV with ego-motion. Output: bev_embed [B, 40000, 256].',
+  track: '<strong>Track Head</strong> — 900 transformer queries each predict one potential object. A Query Interaction Module filters detections across frames. Memory bank holds lost tracks for up to 5 frames. Output: track_query per surviving object.',
+  map: '<strong>Map Head (Seg Head)</strong> — DETR-style queries predict lane dividers, crossings, and road edges as vectors. Output feeds directly into the Motion Head as structural context.',
+  motion: '<strong>Motion Head</strong> — For each tracked agent, predicts 6 possible 3-second trajectories. Uses agent-to-agent and agent-to-map attention. Output: traj_query vectors passed to Occ Head.',
+  occ: '<strong>Occupancy Head</strong> — Predicts which of the 200×200 grid cells will be occupied for the next 4 time steps. Takes both BEV features and motion trajectory queries as input. Safety constraint for the planner.',
+  plan: '<strong>Planning Head</strong> — Takes BEV, motion context, occupancy, and a navigation command (left/straight/right). Outputs 6 waypoints (x,y) spaced 0.5s apart. Optional collision optimizer adjusts waypoints to avoid occupied cells.'
+};
+
+window.showNodeDesc = function(key) {
+  document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active-node'));
+  const node = document.getElementById('node-' + key);
+  if (node) node.classList.add('active-node');
+  const desc = document.getElementById('node-desc');
+  if (desc) { desc.innerHTML = nodeDescriptions[key]; desc.style.animation = 'fadeSlideUp 0.3s var(--ease-out)'; }
+};
+
+window.showArchInfo = function(key) {
+  document.querySelectorAll('.arch-block').forEach(b => b.classList.remove('lit'));
+  const el = document.getElementById('arch-' + key);
+  if (el) el.classList.add('lit');
+  const desc = document.getElementById('arch-desc');
+  if (desc) { desc.innerHTML = nodeDescriptions[key]; }
+};
+
+// ===================================================
+// BEV ANIMATION
+// ===================================================
+function drawCamera(canvasId, hue, label) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const w = c.width, h = c.height;
+  // Sky
+  const skyGrad = ctx.createLinearGradient(0,0,0,h*0.5);
+  skyGrad.addColorStop(0, `hsl(${hue},30%,20%)`);
+  skyGrad.addColorStop(1, `hsl(${hue},20%,15%)`);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0,0,w,h*0.5);
+  // Road
+  const roadGrad = ctx.createLinearGradient(0,h*0.5,0,h);
+  roadGrad.addColorStop(0, '#2A2A3E');
+  roadGrad.addColorStop(1, '#1A1A28');
+  ctx.fillStyle = roadGrad;
+  ctx.fillRect(0,h*0.5,w,h*0.5);
+  // Lane lines
+  ctx.strokeStyle = 'rgba(255,200,0,0.5)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(w*0.5,h*0.5); ctx.lineTo(w*0.5,h); ctx.stroke();
+  // A car
+  ctx.fillStyle = `hsl(${(hue+120)%360},60%,50%)`;
+  ctx.fillRect(w*0.38, h*0.55, w*0.24, h*0.25);
+  ctx.setLineDash([]);
+}
+
+const camConfigs = [
+  {id:'canvas-fl', hue:200}, {id:'canvas-f', hue:220}, {id:'canvas-fr', hue:240},
+  {id:'canvas-bl', hue:30},  {id:'canvas-b', hue:40},  {id:'canvas-br', hue:50}
+];
+camConfigs.forEach(c => drawCamera(c.id, c.hue, c.id));
+
+window.animateBEV = function() {
+  const bevCanvas = document.getElementById('bev-canvas');
+  const ctx = bevCanvas.getContext('2d');
+  const w = bevCanvas.width, h = bevCanvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  // Animate camera flash
+  document.querySelectorAll('.cam-view').forEach((cam, i) => {
+    setTimeout(() => {
+      cam.style.boxShadow = '0 0 0 2px var(--color-accent)';
+      setTimeout(() => { cam.style.boxShadow = ''; }, 300);
+    }, i * 120);
+  });
+
+  // Draw BEV after cameras
+  setTimeout(() => {
+    bevCanvas.style.opacity = '1';
+    ctx.clearRect(0,0,w,h);
+
+    // Draw road lanes
+    ctx.strokeStyle = 'rgba(255,200,0,0.3)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    // Horizontal road
+    ctx.beginPath(); ctx.moveTo(0,h*0.5); ctx.lineTo(w,h*0.5); ctx.stroke();
+    // Vertical road
+    ctx.beginPath(); ctx.moveTo(w*0.5,0); ctx.lineTo(w*0.5,h); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Other agents
+    const agents = [
+      {x:0.35,y:0.32,color:'rgba(26,107,138,0.8)'},{x:0.6,y:0.48,color:'rgba(26,107,138,0.8)'},
+      {x:0.45,y:0.65,color:'rgba(107,53,168,0.8)'},{x:0.7,y:0.3,color:'rgba(26,107,138,0.8)'},
+    ];
+    agents.forEach(a => {
+      ctx.fillStyle = a.color;
+      ctx.beginPath();
+      ctx.roundRect(a.x*w - 5, a.y*h - 7, 10, 14, 2);
+      ctx.fill();
+      // Trajectory dots
+      ctx.fillStyle = 'rgba(42,255,100,0.4)';
+      for(let t=1;t<=3;t++) {
+        ctx.beginPath();
+        ctx.arc(a.x*w, (a.y - t*0.05)*h, 2, 0, Math.PI*2);
+        ctx.fill();
+      }
+    });
+  }, 800);
+};
+
+// ===================================================
+// CHAT ANIMATION — TRACKER
+// ===================================================
+const trackMessages = [
+  { sender: 'BEV', color: 'var(--color-actor-1)', initials: 'BEV', text: 'Frame ready! Here is your 200×200 feature map, fresh from 6 cameras.', right: false },
+  { sender: 'TrackHead', color: 'var(--color-actor-2)', initials: 'TH', text: 'Thanks! Running 900 queries against the BEV... Found 14 potential objects.', right: true },
+  { sender: 'QIM', color: 'var(--color-actor-3)', initials: 'QIM', text: 'Hold on. I\'m the Query Interaction Module — checking scores. Filtering 8 low-confidence detections...', right: false },
+  { sender: 'MemoryBank', color: 'var(--color-actor-5)', initials: 'MB', text: 'I have 3 objects from the previous frame that haven\'t appeared yet. Searching for matches...', right: false },
+  { sender: 'TrackHead', color: 'var(--color-actor-2)', initials: 'TH', text: 'Match found! Objects #4 and #7 from memory align with new detections. Same ID, updated position.', right: true },
+  { sender: 'MotionHead', color: 'var(--color-actor-4)', initials: 'MH', text: 'Perfect — send me the track_query vectors for all 6 confirmed objects. I\'ll predict their futures.', right: false },
+];
+
+let trackIdx = 0;
+
+function buildMsg(m) {
+  const div = document.createElement('div');
+  div.className = 'chat-message' + (m.right ? ' right' : '');
+  div.innerHTML = `
+    <div class="chat-avatar" style="background:${m.color}">${m.initials}</div>
+    <div class="chat-bubble">
+      <span class="chat-sender" style="color:${m.color}">${m.sender}</span>
+      <p>${m.text}</p>
+    </div>`;
+  return div;
+}
+
+window.playChatTrack = function() {
+  if (trackIdx >= trackMessages.length) return;
+  const m = trackMessages[trackIdx];
+  const typing = document.getElementById('track-typing');
+  const avatar = document.getElementById('track-typing-avatar');
+  avatar.textContent = m.initials;
+  avatar.style.background = m.color;
+  typing.style.display = 'flex';
+  setTimeout(() => {
+    typing.style.display = 'none';
+    const msgs = document.getElementById('track-chat');
+    msgs.appendChild(buildMsg(m));
+    msgs.scrollTop = msgs.scrollHeight;
+    trackIdx++;
+    document.getElementById('track-progress').textContent = trackIdx + ' / ' + trackMessages.length;
+  }, 700);
+};
+
+window.playChatAll = function(type) {
+  let i = 0;
+  const interval = setInterval(() => {
+    if (type === 'track') playChatTrack();
+    i++;
+    if (i >= trackMessages.length) clearInterval(interval);
+  }, 1100);
+};
+
+window.resetChatTrack = function() {
+  trackIdx = 0;
+  document.getElementById('track-chat').innerHTML = '';
+  document.getElementById('track-progress').textContent = '0 / ' + trackMessages.length;
+};
+
+// ===================================================
+// QUIZ LOGIC
+// ===================================================
+const explanations = {
+  'q1-block': {
+    correct: 'Exactly right! Error compounding is the core motivation for end-to-end training in UniAD. The paper shows that planning-oriented joint training leads to better planning metrics than any modular approach.',
+    incorrect: 'Actually, the key reason is architectural: when errors in early perception tasks (wrong detections) feed into later tasks, they amplify. Joint training aligns all tasks to minimize planning mistakes, not just perception mistakes.'
+  },
+  'q2-block': {
+    correct: 'Correct! Each grid cell in the 200×200 BEV is described by a 256-dimensional feature vector — a rich representation of everything the model learned about that location: what type of surface, what objects, what motion context.',
+    incorrect: 'Not quite. The 256 is the embed_dims — a hyperparameter controlling how many learned numbers describe each BEV cell. It\'s the "vocabulary size" of each spatial feature, not related to cameras or resolution.'
+  },
+  'q3-block': {
+    correct: 'Exactly! The memory bank stores the pedestrian\'s query (feature vector) for up to miss_tolerance=5 frames. When they reappear, Hungarian matching re-associates the new detection with the stored query — same ID, no discontinuity.',
+    incorrect: 'Close, but UniAD specifically handles this. The memory bank exists precisely to handle occlusion. miss_tolerance=5 gives the tracker 5 frames (2.5 seconds) to re-find a lost object before giving up on it.'
+  },
+  'q4-block': {
+    correct: 'Precisely! With only 1 anchor, the model would predict a single deterministic trajectory per agent. At intersections or merges where agents could go multiple ways, the prediction would be forced to average between futures — leading to "phantom middle paths" that match none of the real options.',
+    incorrect: 'The anchor count is about trajectory diversity per agent, not speed or object count. Setting it to 1 means the model can\'t express uncertainty about which way an agent will go — a major safety problem at intersections.'
+  },
+  'q5-block': {
+    correct: 'Right! The occupancy map is a hard safety constraint in UniAD. The planning head is trained with a collision loss that penalizes trajectories overlapping with occupied cells. In deployment, you would use the occupancy map to replan around dangerous areas.',
+    incorrect: 'In UniAD, the occupancy prediction directly informs the planner. The loss_collision in planning_head.py penalizes the planner for choosing paths through occupied cells. Ignoring predictions or stopping are both suboptimal — replanning is the correct response.'
+  },
+  'q6-block': {
+    correct: 'Excellent systems thinking! Increasing the collision/occupancy loss weights in task_loss_weight directly signals to the model that safety violations are more costly. This is the standard way to tune safety-performance tradeoffs in multi-task learning.',
+    incorrect: 'The most targeted intervention is at the loss level. Changing num_query or planning_steps alters the model capacity, not its values. Increasing the collision loss penalty directly tells the optimizer: "I care more about not hitting things than about trajectory smoothness."'
+  }
+};
+
+window.selectOption = function(btn) {
+  const block = btn.closest('.quiz-question-block');
+  block.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+  btn.classList.add('selected');
+};
+
+window.checkSingleQuiz = function(blockId, feedbackId) {
+  const block = document.getElementById(blockId);
+  const feedback = document.getElementById(feedbackId);
+  if (!block || !feedback) return;
+  const selected = block.querySelector('.quiz-option.selected');
+  if (!selected) {
+    feedback.textContent = 'Please select an answer first!';
+    feedback.className = 'quiz-feedback show warning';
+    return;
+  }
+  const correct = block.dataset.correct;
+  const isCorrect = selected.dataset.value === correct;
+  block.querySelectorAll('.quiz-option').forEach(o => { o.disabled = true; });
+  if (isCorrect) {
+    selected.classList.add('correct');
+    feedback.innerHTML = '<strong>✓ Correct!</strong> ' + explanations[blockId].correct;
+    feedback.className = 'quiz-feedback show success';
+  } else {
+    selected.classList.add('incorrect');
+    block.querySelector('[data-value="' + correct + '"]').classList.add('correct');
+    feedback.innerHTML = '<strong>Not quite.</strong> ' + explanations[blockId].incorrect;
+    feedback.className = 'quiz-feedback show error';
+  }
+};
+
+window.resetSingleQuiz = function(blockId, feedbackId) {
+  const block = document.getElementById(blockId);
+  const feedback = document.getElementById(feedbackId);
+  if (!block || !feedback) return;
+  block.querySelectorAll('.quiz-option').forEach(o => {
+    o.classList.remove('selected', 'correct', 'incorrect');
+    o.disabled = false;
+  });
+  feedback.className = 'quiz-feedback';
+  feedback.textContent = '';
+};
+
+// ===================================================
+// GLOSSARY TOOLTIPS
+// ===================================================
+let activeTooltip = null;
+
+function positionTooltip(term, tip) {
+  const rect = term.getBoundingClientRect();
+  const tipWidth = 300;
+  let left = rect.left + rect.width / 2 - tipWidth / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - tipWidth - 8));
+  document.body.appendChild(tip);
+  const tipHeight = tip.offsetHeight || 80;
+  if (rect.top - tipHeight - 8 < 0) {
+    tip.style.top = (rect.bottom + 8) + 'px';
+    tip.classList.add('flip');
+  } else {
+    tip.style.top = (rect.top - tipHeight - 8) + 'px';
+    tip.classList.remove('flip');
+  }
+  tip.style.left = left + 'px';
+  tip.style.width = tipWidth + 'px';
+}
+
+document.querySelectorAll('.term').forEach(term => {
+  const tip = document.createElement('span');
+  tip.className = 'term-tooltip';
+  tip.textContent = term.dataset.definition;
+
+  term.addEventListener('mouseenter', () => {
+    if (activeTooltip && activeTooltip !== tip) { activeTooltip.classList.remove('visible'); activeTooltip.remove(); }
+    positionTooltip(term, tip);
+    requestAnimationFrame(() => tip.classList.add('visible'));
+    activeTooltip = tip;
+  });
+  term.addEventListener('mouseleave', () => {
+    tip.classList.remove('visible');
+    setTimeout(() => { if (!tip.classList.contains('visible')) tip.remove(); }, 150);
+    activeTooltip = null;
+  });
+  term.addEventListener('click', e => {
+    e.stopPropagation();
+    if (activeTooltip && activeTooltip !== tip) { activeTooltip.classList.remove('visible'); activeTooltip.remove(); }
+    if (tip.classList.contains('visible')) { tip.classList.remove('visible'); tip.remove(); activeTooltip = null; }
+    else { positionTooltip(term, tip); requestAnimationFrame(() => tip.classList.add('visible')); activeTooltip = tip; }
+  });
+});
+document.addEventListener('click', () => {
+  if (activeTooltip) { activeTooltip.classList.remove('visible'); activeTooltip.remove(); activeTooltip = null; }
+});
+
+// Init
+updateNav();
+</script>
+</body>
+</html>
